@@ -4,11 +4,18 @@ import * as lambda from 'aws-cdk-lib/aws-lambda';
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
 import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import * as apigateway from 'aws-cdk-lib/aws-apigateway';
+import { Secret } from 'aws-cdk-lib/aws-secretsmanager';
 import path = require('path');
 
 export class AwsDemoProjectTsStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
+
+    // creating secret
+    const apiUrlSecret = new Secret(this, 'ApiUrlSecret', {
+      secretStringValue: cdk.SecretValue.unsafePlainText(JSON.stringify({ apiUrl: 'https://jsonplaceholder.typicode.com/posts' })),
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
+    });
 
     // creating DynamoDB table
     const table = new dynamodb.Table(this, 'AwsDemoProjectTable', {
@@ -17,11 +24,13 @@ export class AwsDemoProjectTsStack extends cdk.Stack {
       removalPolicy: cdk.RemovalPolicy.DESTROY,
     });
 
-    new NodejsFunction(this, 'AxiosFunction', {
+    const apiFunction = new NodejsFunction(this, 'AxiosFunction', {
       runtime: lambda.Runtime.NODEJS_16_X,
       handler: 'index.handler',
       entry: path.join(__dirname, '../src/functions/axiosTest/index.ts'),
-      environment: {},
+      environment: {
+        SECRET_NAME: apiUrlSecret.secretName,
+      },
       functionName: `AxiosFunction`,
       architecture: lambda.Architecture.ARM_64,
       bundling: {
@@ -83,6 +92,10 @@ export class AwsDemoProjectTsStack extends cdk.Stack {
     // Add /get endpoint
     const getIntegration = new apigateway.LambdaIntegration(getLambdaFunction);
     api.root.addResource('get').addMethod('GET', getIntegration);
+
+
+    // Permissions for Lambda function to access secret
+    apiUrlSecret.grantRead(apiFunction);
 
   }
 }
