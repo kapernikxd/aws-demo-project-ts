@@ -17,6 +17,19 @@ export class AwsDemoProjectTsStack extends cdk.Stack {
       removalPolicy: cdk.RemovalPolicy.DESTROY,
     });
 
+    new NodejsFunction(this, 'AxiosFunction', {
+      runtime: lambda.Runtime.NODEJS_16_X,
+      handler: 'index.handler',
+      entry: path.join(__dirname, '../src/functions/axiosTest/index.ts'),
+      environment: {},
+      functionName: `AxiosFunction`,
+      architecture: lambda.Architecture.ARM_64,
+      bundling: {
+        externalModules: [],
+        nodeModules: ['axios'],
+      },
+    });
+
     const helloWorldFunction = new NodejsFunction(this, 'hello-world', {
       runtime: lambda.Runtime.NODEJS_16_X,
       handler: 'handler',
@@ -36,7 +49,7 @@ export class AwsDemoProjectTsStack extends cdk.Stack {
             TABLE_NAME: table.tableName
         },
         functionName: `WriteFunction`,
-        architecture: lambda.Architecture.ARM_64
+        architecture: lambda.Architecture.ARM_64,
     });
 
       const getLambdaFunction = new NodejsFunction(this, 'GetFunction', {
