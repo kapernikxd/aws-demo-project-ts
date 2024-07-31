@@ -27,7 +27,32 @@ export class AwsDemoProjectTsStack extends cdk.Stack {
       },
     });
 
+    const writeLambdaFunction = new NodejsFunction(this, 'WriteFunction', {
+        runtime: lambda.Runtime.NODEJS_16_X,
+        handler: 'handler',
+        entry: path.join(__dirname, '../src/functions/writeToDynamo/index.ts'),
+        environment: {
+            TABLE_NAME: table.tableName
+        },
+        functionName: `WriteFunction`,
+        architecture: lambda.Architecture.ARM_64
+    });
+
+      const getLambdaFunction = new NodejsFunction(this, 'GetFunction', {
+          runtime: lambda.Runtime.NODEJS_16_X,
+          handler: 'handler',
+          entry: path.join(__dirname, '../src/functions/getFromDynamo/index.ts'),
+          environment:{
+              TABLE_NAME: table.tableName 
+          },
+          architecture: lambda.Architecture.ARM_64,
+          functionName: `GetFunction`,
+      });
+  
+
       // Grant the lambda function permissions to access the DynamoDB table
       table.grantReadWriteData(helloWorldFunction);
+      table.grantReadWriteData(writeLambdaFunction);
+      table.grantReadData(getLambdaFunction);
   }
 }
