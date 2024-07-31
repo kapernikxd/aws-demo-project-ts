@@ -10,19 +10,24 @@ export class AwsDemoProjectTsStack extends cdk.Stack {
     super(scope, id, props);
 
     // creating DynamoDB table
-    new dynamodb.Table(this, 'AwsDemoProjectTable', {
-        partitionKey: { name: 'id', type: dynamodb.AttributeType.STRING },
-        tableName: "AwsDemoProjectTable", //table name,
-        removalPolicy: cdk.RemovalPolicy.DESTROY,
+    const table = new dynamodb.Table(this, 'AwsDemoProjectTable', {
+      partitionKey: { name: 'id', type: dynamodb.AttributeType.STRING },
+      tableName: "AwsDemoProjectTable", //table name
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
     });
 
-    new NodejsFunction(this, 'hello-world', {
+    const helloWorldFunction = new NodejsFunction(this, 'hello-world', {
       runtime: lambda.Runtime.NODEJS_16_X,
       handler: 'handler',
       entry: path.join(__dirname, '../src/functions/index.ts'),
-      environment: {},
       functionName: `hello-world`,
       architecture: lambda.Architecture.ARM_64,
+      environment: {
+        TABLE_NAME: table.tableName,
+      },
     });
+
+      // Grant the lambda function permissions to access the DynamoDB table
+      table.grantReadWriteData(helloWorldFunction);
   }
 }
