@@ -3,6 +3,7 @@ import { Construct } from 'constructs';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
 import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
+import * as apigateway from 'aws-cdk-lib/aws-apigateway';
 import path = require('path');
 
 export class AwsDemoProjectTsStack extends cdk.Stack {
@@ -54,5 +55,21 @@ export class AwsDemoProjectTsStack extends cdk.Stack {
       table.grantReadWriteData(helloWorldFunction);
       table.grantReadWriteData(writeLambdaFunction);
       table.grantReadData(getLambdaFunction);
+
+
+    // Create API Gateway
+    const api = new apigateway.RestApi(this, 'DemoApi', {
+      restApiName: 'Demo Service',
+      description: 'This service serves write and read functions.'
+    });
+
+    // Add /write endpoint
+    const writeIntegration = new apigateway.LambdaIntegration(writeLambdaFunction);
+    api.root.addResource('write').addMethod('POST', writeIntegration);
+
+    // Add /get endpoint
+    const getIntegration = new apigateway.LambdaIntegration(getLambdaFunction);
+    api.root.addResource('get').addMethod('GET', getIntegration);
+
   }
 }
